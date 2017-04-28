@@ -5,6 +5,11 @@ import Markdown from 'rsg-components/Markdown';
 import Styled from 'rsg-components/Styled';
 import Group from 'react-group';
 import { unquote, getType, showSpaces } from './util';
+import JsDocArguments from 'rsg-components/JsDoc/Arguments';
+import JsDocDeprecated from 'rsg-components/JsDoc/Deprecated';
+import JsDocLinks from 'rsg-components/JsDoc/Links';
+import JsDocSince from 'rsg-components/JsDoc/Since';
+import JsDocVersion from 'rsg-components/JsDoc/Version';
 
 const styles = ({ font, border, light, lightest, name, type }) => ({
 	table: {
@@ -45,6 +50,11 @@ const styles = ({ font, border, light, lightest, name, type }) => ({
 	name: {
 		fontSize: 13,
 		color: name,
+	},
+	deprecatedName: {
+		fontSize: 13,
+		color: light,
+		textDecoration: 'line-through',
 	},
 	type: {
 		fontSize: 13,
@@ -97,7 +107,7 @@ export function PropsRenderer({ classes, props }) {
 			const prop = props[name];
 			rows.push(
 				<tr key={name} className={classes.row}>
-					<td className={classes.cell}><Code className={classes.name}>{name}</Code></td>
+					<td className={classes.cell}>{renderPropName(name, prop)}</td>
 					<td className={classes.cell}><Code className={classes.type}>{renderType(getType(prop))}</Code></td>
 					<td className={classes.cell}>{renderDefault(prop)}</td>
 					<td className={classes.cell + ' ' + classes.cellDesc}>{renderDescription(prop)}</td>
@@ -105,6 +115,14 @@ export function PropsRenderer({ classes, props }) {
 			);
 		}
 		return rows;
+	}
+
+	function renderPropName(name, prop) {
+		if (prop.tags && 'deprecated' in prop.tags) {
+			return (<Code className={classes.deprecatedName}>{name}</Code>);
+		}
+
+		return (<Code className={classes.name}>{name}</Code>);
 	}
 
 	function renderDefault(prop) {
@@ -130,11 +148,19 @@ export function PropsRenderer({ classes, props }) {
 	function renderDescription(prop) {
 		const { description } = prop;
 		const extra = renderExtra(prop);
+
 		return (
-			<Group separator={<br />}>
-				{description && <Markdown text={description} inline />}
-				{extra}
-			</Group>
+			<div>
+				<JsDocDeprecated tags={prop.tags} />
+				<JsDocVersion tags={prop.tags} />
+				<JsDocSince tags={prop.tags} />
+				<Group separator={<br />}>
+					{description && <Markdown text={description} inline />}
+					{extra}
+				</Group>
+				<JsDocLinks tags={prop.tags} />
+				<JsDocArguments tags={prop.tags} />
+			</div>
 		);
 	}
 
@@ -144,7 +170,6 @@ export function PropsRenderer({ classes, props }) {
 		if (!type) {
 			return null;
 		}
-
 		switch (type.name) {
 			case 'enum':
 				return renderEnum(prop);
