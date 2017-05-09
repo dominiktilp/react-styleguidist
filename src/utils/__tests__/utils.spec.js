@@ -272,3 +272,163 @@ describe('filterComponentExamples', () => {
 		});
 	});
 });
+
+describe('parseExampleCode', () => {
+	it('should return empty object when pass empty string', () => {
+		const code = '';
+		const result = utils.parseExampleCode(code);
+		expect(result).toEqual({
+			html: undefined,
+			js: undefined,
+			jsx: undefined,
+		});
+	});
+
+	it('code is detected as jsx when pass string', () => {
+		const code = '<Component param=\'test\'>Test</Component>';
+		const result = utils.parseExampleCode(code);
+		expect(result).toEqual({
+			html: undefined,
+			js: undefined,
+			jsx: '<Component param=\'test\'>Test</Component>',
+		});
+	});
+
+	it('code is detected as jsx when pass markdown with jsx code', () => {
+		const code = `
+			\`\`\`jsx
+			<Component param='test'>Test</Component>
+			\`\`\`
+			`;
+		const result = utils.parseExampleCode(code);
+		expect(result).toEqual({
+			html: undefined,
+			js: undefined,
+			jsx: '<Component param=\'test\'>Test</Component>',
+		});
+	});
+
+	it('code is detected as html when pass markdown with html code', () => {
+		const code = `
+			\`\`\`html
+			<div class='test'>Test</div>
+			\`\`\`
+			`;
+		const result = utils.parseExampleCode(code);
+		expect(result).toEqual({
+			html: '<div class=\'test\'>Test</div>',
+			js: undefined,
+			jsx: undefined,
+		});
+	});
+
+	it('code is detected as html when pass markdown with js code', () => {
+		const code = `
+			\`\`\`js
+			alert('Test');
+			\`\`\`
+			`;
+		const result = utils.parseExampleCode(code);
+		expect(result).toEqual({
+			html: undefined,
+			js: 'alert(\'Test\');',
+			jsx: undefined,
+		});
+	});
+
+	it('code is detected as html and js when pass markdown with html code follow with js code', () => {
+		const code = `
+			\`\`\`html
+			<div class='test'>Test</div>
+			\`\`\`
+			\`\`\`js
+			alert('Test');
+			\`\`\`
+			`;
+		const result = utils.parseExampleCode(code);
+		expect(result).toEqual({
+			html: '<div class=\'test\'>Test</div>',
+			js: 'alert(\'Test\');',
+			jsx: undefined,
+		});
+	});
+});
+
+describe('stringifyParsedExampleCode', () => {
+	it('should return empty string when pass empty object', () => {
+		const code = {
+			html: undefined,
+			js: undefined,
+			jsx: undefined,
+		};
+		const result = utils.stringifyParsedExampleCode(code);
+		expect(result).toEqual('');
+	});
+
+	it('should return jsx markdown code when pass object with jsx code', () => {
+		const code = {
+			html: undefined,
+			js: undefined,
+			jsx: '<Component param=\'test\'>Test</Component>',
+		};
+		const result = utils.stringifyParsedExampleCode(code);
+		expect(result).toEqual(
+			utils.trimIndentation(`
+				\`\`\`jsx
+				<Component param='test'>Test</Component>
+				\`\`\`
+			`)
+		);
+	});
+
+	it('should return html markdown code when pass object with html code', () => {
+		const code = {
+			html: '<div class=\'test\'>Test</div>',
+			js: undefined,
+			jsx: undefined,
+		};
+		const result = utils.stringifyParsedExampleCode(code);
+		expect(result).toEqual(
+			utils.trimIndentation(`
+				\`\`\`html
+				<div class='test'>Test</div>
+				\`\`\`
+			`)
+		);
+	});
+
+	it('should return html markdown code when pass object with html code', () => {
+		const code = {
+			html: undefined,
+			js: 'alert("Test");',
+			jsx: undefined,
+		};
+		const result = utils.stringifyParsedExampleCode(code);
+		expect(result).toEqual(
+			utils.trimIndentation(`
+				\`\`\`js
+				alert("Test");
+				\`\`\`
+			`)
+		);
+	});
+
+	it('should return html markdown code folowed with js mardown code when pass object with html and js code', () => {
+		const code = {
+			html: '<div class=\'test\'>Test</div>',
+			js: 'alert("Test");',
+			jsx: undefined,
+		};
+		const result = utils.stringifyParsedExampleCode(code);
+		expect(result).toEqual(
+			utils.trimIndentation(`
+				\`\`\`html
+				<div class='test'>Test</div>
+				\`\`\`
+				\`\`\`js
+				alert("Test");
+				\`\`\`
+			`)
+		);
+	});
+});

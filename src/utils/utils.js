@@ -183,3 +183,46 @@ export function filterComponentExamples(component, index) {
 	newComponent.props.examples = [component.props.examples[index]];
 	return newComponent;
 }
+
+export function trimIndentation(string) {
+	return string.trim().replace(/\n[\t\s]+/g, '\n');
+}
+
+/**
+ * Return object with parsed code
+ * which can be used in Preview or Code example it parse markup code to this structure:
+ * parseExampleCode('') → {jsx: undefined, js: undefined, html: undefined}
+ *
+ * @param {any} code
+ * @returns {object}
+ */
+export function parseExampleCode(code) {
+	const parsedCode = { html: undefined, js: undefined, jsx: undefined };
+	let codeChunks = code.split(/```(jsx|html|js)\s?([\s\S]+?)```/)
+		.filter(function(it) {
+			return !it.match(/^\s*$/, '');
+		});
+	codeChunks = codeChunks.length < 2 ? ['jsx', code] : codeChunks;
+	for (let index = 0; index < codeChunks.length; index = index + 2) {
+		parsedCode[codeChunks[index]] =
+			trimIndentation(codeChunks[index + 1]) ||
+			undefined;
+	}
+	return parsedCode;
+}
+
+export function stringifyParsedExampleCode(parsedCode) {
+	return ['html', 'js', 'jsx'].reduce((acc, mode) => {
+		if (parsedCode[mode]) {
+			acc.push(
+				trimIndentation(`
+					\`\`\`${mode}
+					${parsedCode[mode]}
+					\`\`\`
+				`)
+			);
+		}
+		return acc;
+	}, []).join('\n');
+}
+

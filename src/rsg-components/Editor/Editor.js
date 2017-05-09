@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import debounce from 'lodash/debounce';
 import Codemirror from 'react-codemirror';
 import 'codemirror/mode/jsx/jsx';
+import 'codemirror/mode/javascript/javascript';
+import 'codemirror/mode/htmlmixed/htmlmixed';
 
 // We’re explicitly specifying Webpack loaders here so we could skip specifying them in Webpack configuration.
 // That way we could avoid clashes between our loaders and user loaders.
@@ -13,21 +15,32 @@ const codemirrorOptions = {
 	mode: 'jsx',
 	lineNumbers: false,
 	lineWrapping: true,
-	smartIndent: false,
+	smartIndent: true,
 	matchBrackets: true,
 	viewportMargin: Infinity,
 };
 
 const UPDATE_DELAY = 10;
 
+const codemirrorModes = {
+	js: 'javascript',
+	jsx: 'jsx',
+	html: 'htmlmixed',
+};
+
 export default class Editor extends Component {
 	static propTypes = {
 		code: PropTypes.string.isRequired,
 		onChange: PropTypes.func.isRequired,
+		mode: PropTypes.oneOf(['jsx', 'html', 'js']),
 	};
 	static contextTypes = {
 		config: PropTypes.object.isRequired,
 	};
+
+	static defaultProps = {
+		mode: 'jsx',
+	}
 
 	constructor() {
 		super();
@@ -48,6 +61,7 @@ export default class Editor extends Component {
 		const options = {
 			...codemirrorOptions,
 			theme: highlightTheme,
+			mode: codemirrorModes[this.props.mode] || this.props.mode,
 		};
 		return (
 			<Codemirror value={code} onChange={this.handleChange} options={options} />

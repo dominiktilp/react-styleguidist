@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Editor from 'rsg-components/Editor';
 import Link from 'rsg-components/Link';
 import Preview from 'rsg-components/Preview';
 import Styled from 'rsg-components/Styled';
+import { parseExampleCode, stringifyParsedExampleCode } from '../../utils/utils';
 
 const styles = ({ base, font, link, linkHover, border, baseBackground, codeBackground }) => ({
 	root: {
@@ -60,45 +61,71 @@ const styles = ({ base, font, link, linkHover, border, baseBackground, codeBackg
 	},
 });
 
-export function PlaygroundRenderer({
-	classes,
-	code,
-	showCode,
-	name,
-	index,
-	isolatedExample,
-	evalInContext,
-	onChange,
-	onCodeToggle,
-}) {
-	return (
-		<div className={classes.root}>
-			<div className={classes.preview} data-preview={name ? name : ''}>
-				<div className={classes.isolatedLink}>
-					{name && (
-						isolatedExample ? (
-							<Link href={'#!/' + name}>⇽ Exit Isolation</Link>
-						) : (
-							<Link href={'#!/' + name + '/' + index}>Open isolated ⇢</Link>
-						)
-					)}
+export class PlaygroundRenderer extends Component {
+
+	handleCodeChange(parsedCode, mode, onChange) {
+		return function(newCode) {
+			parsedCode[mode] = newCode;
+			return onChange(stringifyParsedExampleCode(parsedCode));
+		};
+	}
+
+	render() {
+		const {
+			classes,
+			code,
+			showCode,
+			index,
+			evalInContext,
+			onChange,
+			onCodeToggle,
+			name,
+			isolatedExample,
+		} = this.props;
+		const parsedCode = parseExampleCode(code);
+		return (
+			<div className={classes.root}>
+				<div className={classes.preview} data-preview={name ? name : ''}>
+					<div className={classes.isolatedLink}>
+						{name && (
+							isolatedExample ? (
+								<Link href={'#!/' + name}>⇽ Exit Isolation</Link>
+							) : (
+								<Link href={'#!/' + name + '/' + index}>Open isolated ⇢</Link>
+							)
+						)}
+					</div>
+					<Preview code={code} evalInContext={evalInContext} />
 				</div>
-				<Preview code={code} evalInContext={evalInContext} />
-			</div>
-			{showCode ? (
-				<div>
-					<Editor code={code} onChange={onChange} />
-					<button type="button" className={classes.hideCode} onClick={onCodeToggle}>
-						Hide code
+				{showCode ? (
+					<div>
+						{
+							['html', 'js', 'jsx'].map((mode) => {
+								return parsedCode[mode] &&
+									<Editor
+										key={mode}
+										mode={mode}
+										code={parsedCode[mode]}
+										onChange={
+											this.handleCodeChange(
+												parsedCode, mode, onChange
+											)
+										}
+									/>;
+							})
+						}
+						<button type="button" className={classes.hideCode} onClick={onCodeToggle}>
+							Hide code
+						</button>
+					</div>
+				) : (
+					<button type="button" className={classes.showCode} onClick={onCodeToggle}>
+						Show code
 					</button>
-				</div>
-			) : (
-				<button type="button" className={classes.showCode} onClick={onCodeToggle}>
-					Show code
-				</button>
-			)}
-		</div>
-	);
+				)}
+			</div>
+		);
+	}
 }
 
 PlaygroundRenderer.propTypes = {

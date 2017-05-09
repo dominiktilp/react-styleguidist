@@ -5,6 +5,7 @@ import noop from 'lodash/noop';
 import { transform } from 'buble';
 import PlaygroundError from 'rsg-components/PlaygroundError';
 import Wrapper from 'rsg-components/Wrapper';
+import { parseExampleCode } from '../../utils/utils';
 
 /* eslint-disable react/no-multi-comp */
 
@@ -13,7 +14,9 @@ const compileCode = (code, config) => transform(code, config).code;
 // Wrap everything in a React component to leverage the state management of this component
 class PreviewComponent extends Component {
 	static propTypes = {
-		component: PropTypes.func.isRequired,
+		jsx: PropTypes.func,
+		html: PropTypes.string,
+		js: PropTypes.string,
 	};
 
 	constructor() {
@@ -21,6 +24,20 @@ class PreviewComponent extends Component {
 		this.state = {};
 		this.setState = this.setState.bind(this);
 		this.setInitialState = this.setInitialState.bind(this);
+	}
+
+	componentDidMount() {
+		this.executeJs();
+	}
+
+	componentDidUpdate() {
+		this.executeJs();
+	}
+
+	executeJs() {
+		if (this.props.js) {
+			eval(this.props.js); // eslint-disable-line no-eval
+		}
 	}
 
 	// Synchronously set initial state, so it will be ready before first render
@@ -31,8 +48,12 @@ class PreviewComponent extends Component {
 	}
 
 	render() {
-		return this.props.component(this.state, this.setState, this.setInitialState);
+		if (this.props.jsx) {
+			return this.props.jsx(this.state, this.setState, this.setInitialState);
+		}
+		return <div dangerouslySetInnerHTML={{ __html: this.props.html }} />;
 	}
+
 }
 
 export default class Preview extends Component {
@@ -72,17 +93,33 @@ export default class Preview extends Component {
 			return;
 		}
 
-		const compiledCode = this.compileCode(code);
-		if (!compiledCode) {
-			return;
+		const parsedCode = parseExampleCode(code);
+
+		let exampleComponent;
+		let evalJsCode;
+		if (parsedCode.jsx) {
+			const compiledCode = this.compileCode(parsedCode.jsx);
+			if (!compiledCode) {
+				return;
+			}
+
+			exampleComponent = this.evalInContext(compiledCode);
 		}
 
-		const exampleComponent = this.evalInContext(compiledCode);
+		if (parsedCode.js) {
+			const compiledCode = this.compileCode(parsedCode.js);
+			if (!compiledCode) {
+				return;
+			}
+
+			evalJsCode = compiledCode;
+		}
+
 		const wrappedComponent = (
 			<Wrapper>
-				<PreviewComponent component={exampleComponent} />
+				<PreviewComponent jsx={exampleComponent} html={parsedCode.html} js={evalJsCode} />
 			</Wrapper>
-		);
+			);
 
 		window.requestAnimationFrame(() => {
 			try {
