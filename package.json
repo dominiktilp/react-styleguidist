@@ -169,7 +169,7 @@
     "build:customised": "bin/styleguidist.js build --config examples/customised/styleguide.config.js",
     "build:sections": "bin/styleguidist.js build --config examples/sections/styleguide.config.js",
     "prepublish": "npm run compile",
-    "postinstall": "npm run prepublish && npm run publish",
+    "precommit": "npm run prepublish && npm run publish",
     "publish": "npm run build",
     "gh-pages": "gh-pages -d examples/basic/styleguide",
     "phantomjs": "phantomjs test/phantom.js examples/basic/styleguide/index.html",
